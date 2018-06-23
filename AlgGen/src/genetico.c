@@ -3,7 +3,7 @@
 #include <math.h>
 #include <time.h>
 
-#define PRINT_DEC 0
+#define PRINT_DEC 0       // 1 para printar os indivíduos em decimal || 0 para printar os indivíduos em binário
 #define PI 3.14159265359
 #define GERACOES 500
 #define TORNEIO_LEN 30
