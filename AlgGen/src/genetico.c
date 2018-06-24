@@ -3,7 +3,7 @@
 #include <math.h>
 #include <time.h>
 
-#define PRINT_DEC 0       // 1 para printar os indivíduos em decimal || 0 para printar os indivíduos em binário
+#define PRINT_DEC 1       // 1 para printar os indivíduos em decimal || 0 para printar os indivíduos em binário
 #define PI 3.14159265359
 #define GERACOES 500
 #define TORNEIO_LEN 30
@@ -20,6 +20,7 @@ void avaliaPop(int* popul);
 int melhor(int* popul);
 void cruzamento(int* pai, int* mae);
 void mutar(int* individuo);
+
 int* decbin(int num, int bits);
 void showbin(int bits, int *vec, FILE* out);
 int bindec(int* vec, int bits);
@@ -28,10 +29,16 @@ int fitness[NPOP];  // Vetor que armazena o fitness de todos os individuos, com 
 
 
 int main(){
-	// unsigned long seed = 1529614466;    // Seed de rand para que => X = 1.85 e Y = 2.85 no indivíduo 15
-	// unsigned long seed = 1529648723;    // Seed de rand que acha a solução na 44ª geração
-	// unsigned long seed = 1529693143;    // Seed de rand que acha a solução na 56ª geração
+	// unsigned long seed = 1529614466;    // Seed de rand que acha a solução na 01ª geração
+	// unsigned long seed = 1529693143;    // Seed de rand que acha a solução na 13ª geração
+	// unsigned long seed = 1529648723;    // Seed de rand que acha a solução na 43ª geração
 	unsigned long seed = time(NULL);       // Seed de rand que usa a hora atual, em segundos, contando desde ás 00h de 01/01/1970
+	printf("Deseja usar uma seed randômica arbitrária nesta execução? (s/n): ");
+	char usar_seed = getchar();
+	if(usar_seed == 's' || usar_seed == 'S'){
+		printf("Digite a seed: ");
+		scanf(" %d", &seed);
+	}
 	srand(seed);                           // Usa a seed para configurar o rand
 
 	FILE* saida;                           // Arquivo de saída
@@ -40,9 +47,10 @@ int main(){
 		return 1;
 	}
 
-	fprintf(saida, "[Configuração inicial]\nSeed desta execução: %d\nNúmero de indivíduos da população: %d\nCritério de Parada: Fitness do melhor indivíduo é igual a %d\n\nExecução:\n", seed,((int)NPOP),((int)(100*SOLUCAO)));
+	fprintf(saida, "[Configuração inicial]\nSeed desta execução: %d\nNúmero de indivíduos da população: %d\nCritério de Parada: Fitness do melhor indivíduo é igual a %d\n\nExecução parcial:\n", seed,((int)NPOP),((int)(100*SOLUCAO)));
 	bigbang(saida);
 	fclose(saida);
+	printf("\nExecutado com sucesso!\n");
 	return 0;
 }
 
@@ -50,6 +58,7 @@ void bigbang(FILE* output){
 	int* populacao = (int *) calloc(NPOP,sizeof(int));
 	int g = 0;
 	int mel = 0, decmel = 0;
+
 	gerapop(populacao);
 
 	for(g = 1; g <= GERACOES; g++){
@@ -58,16 +67,16 @@ void bigbang(FILE* output){
 		decmel = bindec(populacao[mel], GEN_LEN);
 		// printf("Geração [%d] -- Erro: %d -- Melhor Fitness: %d\n", g, ((int)(100*SOLUCAO)-fitness[mel]), fitness[mel]);
 		fprintf(output, "Geração %d\n", g);
-		fprintf(output, "    Melhor indivíduo (x): ", g);
+		fprintf(output, "    Melhor indivíduo (x): ");
 
-		#if PRINT_BIN == 0
+		#if PRINT_DEC == 1
 			fprintf(output, " %d    ||    Erro deste indivíduo: %d\n", decmel, ((int)(100*SOLUCAO)-fitness[mel]));
 		#else
 			showbin(GEN_LEN, populacao[mel], output);
 			fprintf(output, "    ||    Erro deste indivíduo: %d\n", ((int)(100*SOLUCAO)-fitness[mel]));
 		#endif
 
-		if(fitness[mel] == (100*SOLUCAO))
+		if(fitness[mel] == (100*SOLUCAO))   // Critério de parada
 			break;
 
 		for(int t = 0; t < TORNEIO_LEN; t++){
@@ -97,11 +106,12 @@ void bigbang(FILE* output){
 
 	fprintf(output, "\n[Resultado]\n");
 	fprintf(output, "Número de Gerações: %d\n", g);
-	#if PRINT_BIN == 0
+	#if PRINT_DEC == 1
 		fprintf(output, "Melhor indivíduo: %d\n", decmel);
 	#else
 		fprintf(output, "Melhor indivíduo: ");
 		showbin(GEN_LEN, populacao[mel], output);
+		fprintf(output, "\n");
 	#endif
 	fprintf(output, "Erro do melhor indivíduo: %d\n", ((int)(100*SOLUCAO)-fitness[mel]));
 	for(int i = 0; i < NPOP; i++)
@@ -158,7 +168,7 @@ void cruzamento(int* pai, int* mae){
 	int scorePai   = avaliaInd(pai);
 	int decfilho   = bindec(filho, GEN_LEN); // Unico jeito de limitar os filhos ao intervalo fechado de [-1,2] com números binários
 
-	if(scoreFilho > scorePai && filho && decfilho < 200 && decfilho > -100){
+	if(scoreFilho > scorePai && decfilho <= 200 && decfilho >= -100){
 		for(int i = 0; i < GEN_LEN; i++){
 			pai[i] = filho[i];
 		}
